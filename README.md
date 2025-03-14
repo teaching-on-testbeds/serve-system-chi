@@ -3,7 +3,7 @@ In this tutorial, we explore some system-level optimizations for model serving. 
 * learn how to wrap a model in an HTTP endpoint using FastAPI
 * and explore system-level optimizations for model serving, including concurrency and batching, in Triton Inference Server
 
-Follow along at [System optimizations for serving machine learning models](https://teaching-on-testbeds.github.io/system-model-chi).
+Follow along at [System optimizations for serving machine learning models](https://teaching-on-testbeds.github.io/serve-system-chi/).
 
 Note: this tutorial requires advance reservation of specific hardware! You should reserve:
 

@@ -1,0 +1,30 @@
+name: "food_classifier"
+backend: "python"
+max_batch_size: 16
+input [
+  {
+    name: "INPUT_IMAGE"
+    data_type: TYPE_STRING
+    dims: [1]
+  }
+]
+output [
+  {
+    name: "FOOD_LABEL"
+    data_type: TYPE_STRING
+    dims: [1]
+  },
+  {
+    name: "PROBABILITY"
+    data_type: TYPE_FP32
+    dims: [1]
+  }
+]
+  instance_group [
+    {
+      count: 1
+      kind: KIND_GPU
+      gpus: [ 0 ]
+    }
+]
+

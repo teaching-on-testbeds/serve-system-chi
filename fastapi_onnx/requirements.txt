@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+numpy
+pillow
+torch
+torchvision
+onnx
+onnxruntime-gpu

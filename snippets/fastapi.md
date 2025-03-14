@@ -52,7 +52,7 @@ def request_fastapi(image_path):
 
 ::: {.cell .markdown}
 
-Meanwhile, the inference service has moved into a separate app:
+Meanwhile, [the inference service has moved into a separate app](https://github.com/teaching-on-testbeds/serve-system-chi/blob/main/fastapi_pt/app.py):
 
 ```python
 app = FastAPI(
@@ -129,7 +129,7 @@ To start, run
 docker compose -f ~/serve-system-chi/docker/docker-compose-fastapi.yaml up -d
 ```
 
-This will bring up three containers:
+This will use a [Docker Compose file](https://github.com/teaching-on-testbeds/serve-system-chi/blob/main/docker/docker-compose-fastapi.yaml) to bring up three containers:
 
 * one container that will host the Flask application, this will serve the web-based user interface of our system
 * one container that will host a FastAPI inference endpoint
@@ -228,13 +228,6 @@ Now that we know everything *works*, let's get some quick performance numbers fr
 
 :::
 
-::: {.cell .code}
-```python
-
-```
-:::
-
-
 
 ::: {.cell .code}
 ```python
@@ -317,7 +310,7 @@ to
       context: /home/cc/serve-system-chi/fastapi_onnx
 ```
 
-to build the FastAPI container image from the "fastapi_onnx" directory, instead of the "fastapi_pt" directory. 
+to build the FastAPI container image [from the "fastapi_onnx" directory](https://github.com/teaching-on-testbeds/serve-system-chi/blob/main/fastapi_onnx/app.py), instead of the "fastapi_pt" directory. 
 
 Save your changes (Ctrl+O, Enter, Ctrl+X). Rebuild the container image:
 

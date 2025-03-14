@@ -22,14 +22,15 @@ To start, run
 
 ```bash
 # runs on node-serve-system
+mkdir ~/serve-system-chi/models/
 cp -r ~/serve-system-chi/models_staging/food_classifier ~/serve-system-chi/models/
 ```
 
-to copy our first configuration into the directory from which Triton will load models.
+to copy [our first configuration](https://github.com/teaching-on-testbeds/serve-system-chi/tree/main/models_staging/food_classifier) into the directory from which Triton will load models.
 
 Our initial implementation serves our food image classifier using PyTorch. Here's how it works. 
 
-In the Docker compose file, the Triton server is started with the command
+In the [Dockerfile](https://github.com/teaching-on-testbeds/serve-system-chi/blob/main/docker/Dockerfile.triton), the Triton server is started with the command
 
 ```bash
 tritonserver --model-repository=/models
@@ -52,7 +53,7 @@ It includes:
 * a configuration file `config.pbtxt` inside that directory. We'll look at that shortly.
 * and a subdirectory for each model version. We have model version 1, so we have a subdirectory 1. Inside this directory is a `model.py`, which describes how the model will run.
 
-Let's look at the configuration file first. Here are the contents of `config.pbtxt`:
+Let's [look at the configuration file first](https://github.com/teaching-on-testbeds/serve-system-chi/blob/main/models_staging/food_classifier/config.pbtxt). Here are the contents of `config.pbtxt`:
 
 ```
 name: "food_classifier"
@@ -104,7 +105,7 @@ We have defined:
   ]
 ```
 
-Next, let's look at `model.py`. For a Triton model with Python backend, the `model.py` must define a class named `TritonPythonModel` with at least an `initialize` and `execute` method. Ours has:
+Next, let's [look at `model.py`](https://github.com/teaching-on-testbeds/serve-system-chi/blob/main/models_staging/food_classifier/1/model.py). For a Triton model with Python backend, the `model.py` must define a class named `TritonPythonModel` with at least an `initialize` and `execute` method. Ours has:
 
 
 * An `initialize` method to load the model, move it to the device specified in the `args` passed from the Triton server, and put it in inference mode. This will run as soon as Triton starts and loads models from the directory passed to it:
@@ -128,7 +129,7 @@ def initialize(self, args):
         self.model.eval()
 
         self.transform = transforms.Compose([
-            transforms.Resize(256),
+            transforms.Resize((224, 224)),
             transforms.CenterCrop(224),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -200,7 +201,7 @@ def execute(self, requests):
     return responses
 ```
 
-Finally, now that we understand how the server works, let's look at how the Flask app sends requests to it. Inside the Flask app, we now have a function which is called whenever there is a new image uploaded to `predict` or `test`, which sends the image to the Triton server:
+Finally, now that we understand how the server works, let's [look at how the Flask app sends requests to it](https://github.com/teaching-on-testbeds/gourmetgram/blob/triton/app.py). Inside the Flask app, we now have a function which is called whenever there is a new image uploaded to `predict` or `test`, which sends the image to the Triton server:
 
 ```python
 def request_triton(image_path):
@@ -251,7 +252,7 @@ To start, run
 docker compose -f ~/serve-system-chi/docker/docker-compose-triton.yaml up -d
 ```
 
-This will bring up three containers:
+This uses a [Docker Compose configuration](https://github.com/teaching-on-testbeds/serve-system-chi/blob/main/docker/docker-compose-triton.yaml) to bring up three containers:
 
 * one container with NVIDIA Triton Server, with the host's GPUs passed to the container, and with the `models` directory (containing the model and its configuration) passed as a bind mount
 * one container that hosts the Flask app, which will serve the user interface and send inference requests to the Triton server
@@ -383,9 +384,9 @@ Concurrency: 8, throughput: 52.3786 infer/sec, latency 151983 usec
 
 -->
 
-:::
+::: {.cell .markdown}
 
-Although the inference time (`compute infer`) remains low, the overall system latency is high because of `queue` delay. Only one sample is processed at a time, and other samples have to wait in a queue for their turn. Here, since there are 8 concurrent clients sending continuous requests, the delay is approximately 8x the inference delay. With more concurrent requests, the queuing delay would grow even larger:
+While the inference time (`compute infer`) remains low, the overall system latency is high because of `queue` delay. Only one sample is processed at a time, and other samples have to wait in a queue for their turn. Here, since there are 8 concurrent clients sending continuous requests, the delay is approximately 8x the inference delay. With more concurrent requests, the queuing delay would grow even larger:
 
 :::
 
@@ -405,7 +406,7 @@ Concurrency: 16, throughput: 52.3609 infer/sec, latency 302804 usec
 
 -->
 
-:::
+::: {.cell .markdown}
 
 Although the delay is large (over 100 ms), it's not because of inadequate compute - if you check the `nvtop` display on the host while the test above is running, you will note low GPU utilization! Take a screenshot of the `nvtop` output when this test is running.
 
@@ -545,7 +546,7 @@ curl http://triton_server:8000/v2/models/food_classifier/versions/1/stats
 
 ::: {.cell .markdown}
 
-Note that the stats show that requests were served in batch sizes greater than 1, even though each client sent a single request at a time.
+Note that the stats show that some requests were served in batch sizes greater than 1, even though each client sent a single request at a time.
 
 :::
 
@@ -572,7 +573,7 @@ and change
 ]
 ```
 
-to
+to run two instances on GPU 0 and two instances on GPU 1:
 
 ```
   instance_group [
@@ -737,7 +738,9 @@ Concurrency: 8, throughput: 118.688 infer/sec, latency 67559 usec
 
 ::: {.cell .markdown}
 
-This makes things subtantially worse - our inference time is higher, even though we are still underutilizing the GPU (as seen in `nvtop`).
+This makes things worse - our inference time is higher, even though we are still underutilizing the GPU (as seen in `nvtop`). 
+
+Our system is not limited by GPU - we are underutilizing the GPU. However, we are being killed by the overhead of the Python backend and our `model.py` implementation.
 
 
 :::
@@ -748,7 +751,7 @@ This makes things subtantially worse - our inference time is higher, even though
 
 The Python backend we have been using is flexible, but not necessarily the most performant. To get better performance, we will use one of the highly optimized backend in Triton. Since we already have an ONNX model, let's use the ONNX backend.
 
-To serve a model using the ONNX backend, we will create a directory structure like this:
+To serve a model using the ONNX backend, we will create a [directory structure like this](https://github.com/teaching-on-testbeds/serve-system-chi/tree/main/models_staging/food_classifier_onnx):
 
 ```
 food_classifier_onnx/
@@ -757,7 +760,7 @@ food_classifier_onnx/
 └── config.pbtxt
 ```
 
-There is no more `model.py` - Triton serves the model directly, we just have to name it `model.onnx`. In `config.pbtxt`, we will specify the backend as `onnxruntime`:
+There is no more `model.py` - Triton serves the model directly, we just have to name it `model.onnx`. In [`config.pbtxt`](https://github.com/teaching-on-testbeds/serve-system-chi/blob/main/models_staging/food_classifier_onnx/config.pbtxt), we will specify the backend as `onnxruntime`:
 
 ```
 name: "food_classifier_onnx"
@@ -790,7 +793,6 @@ Copy this to Triton's models directory:
 
 ```bash
 # runs on node-serve-system
-mkdir ~/serve-system-chi/models/
 cp -r ~/serve-system-chi/models_staging/food_classifier_onnx ~/serve-system-chi/models/
 ```
 
@@ -960,7 +962,7 @@ to
       context: https://github.com/teaching-on-testbeds/gourmetgram.git#triton_onnx
 ```
 
-to use a version of our Flask app where the pre- and post-processing is built in. Also change
+to use [a version of our Flask app where the pre- and post-processing is built in](https://github.com/teaching-on-testbeds/gourmetgram/blob/triton_onnx/app.py). Also change
 
 ```
       - FOOD11_MODEL_NAME=food_classifier
@@ -972,7 +974,7 @@ to
       - FOOD11_MODEL_NAME=food_classifier_onnx
 ```
 
-so that our Flask app will send requests to the correct model.
+so that our Flask app will send requests to the new ONNX model service.
 
 Then run
 

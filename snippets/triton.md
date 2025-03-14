@@ -648,7 +648,7 @@ Concurrency: 8, throughput: 192.849 infer/sec, latency 41374 usec
 
 Although there is still some queuing delay (because our degree of concurrency, 8, is still higher than the number of server instances, 4), and the inference time is also increased due to sharing the compute resources, the prediction delay is still on the order of 10s of ms - not over 100ms, like it was previously with concurrency 8!
 
-Also, if you look at the `nvtop` output on the host while running this test, you will observe higher GPU utilization than before (which is good! We want to use the GPU. Underutilization is bad.) However, we are still not fully utilizing the GPU.
+Also, if you look at the `nvtop` output on the host while running this test, you will observe higher GPU utilization than before (which is good! We want to use the GPU. Underutilization is bad.) (Take a screenshot!) However, we are still not fully utilizing the GPU.
 
 Let's try increasing the number of instances again. Edit the model configuration:
 
@@ -738,7 +738,7 @@ Concurrency: 8, throughput: 118.688 infer/sec, latency 67559 usec
 
 ::: {.cell .markdown}
 
-This makes things worse - our inference time is higher, even though we are still underutilizing the GPU (as seen in `nvtop`). 
+This makes things worse - our inference time is higher, even though we are still underutilizing the GPU (as seen in `nvtop`) (take a screenshot!). 
 
 Our system is not limited by GPU - we are underutilizing the GPU. However, we are being killed by the overhead of the Python backend and our `model.py` implementation.
 
@@ -840,7 +840,7 @@ Concurrency: 1, throughput: 138.444 infer/sec, latency 6701 usec
 
 ::: {.cell .markdown}
 
-This model has much better inference performance than our PyTorch model with Python backend did, in a similar test. Also, if we monitor with `nvtop`, we should see higher GPU utilization while the test is running (which is a good thing!)
+This model has much better inference performance than our PyTorch model with Python backend did, in a similar test. Also, if we monitor with `nvtop`, we should see higher GPU utilization while the test is running (which is a good thing!) (Take a screenshot!)
 
 Let's try scaling *this* model up. Edit the model configuration:
 
@@ -876,7 +876,7 @@ to
 
 and run our benchmark with higher concurrency. (2 instances on each GPU, because we noticed that a single instance used less than half a GPU.) 
 
-Watch the `nvtop` output as you run this test!
+Watch the `nvtop` output as you run this test! (Take a screenshot!)
 
 
 :::

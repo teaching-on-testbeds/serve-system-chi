@@ -874,7 +874,32 @@ to
 ]
 ```
 
-and run our benchmark with higher concurrency. (2 instances on each GPU, because we noticed that a single instance used less than half a GPU.) 
+Save the file (use Ctrl+O then Enter, then Ctrl+X).
+
+Re-build the container image with this change:
+
+```bash
+# runs on node-serve-system
+docker compose -f ~/serve-system-chi/docker/docker-compose-triton.yaml build triton_server
+```
+
+and then bring the server back up:
+
+```bash
+# runs on node-serve-system
+docker compose -f ~/serve-system-chi/docker/docker-compose-triton.yaml up triton_server --force-recreate -d
+```
+
+and use
+
+```bash
+# runs on node-serve-system
+docker logs triton_server
+```
+
+to make sure the server comes up and is ready.
+
+Then, run our benchmark with higher concurrency. (2 instances on each GPU, because we noticed that a single instance used less than half a GPU.) 
 
 Watch the `nvtop` output as you run this test! (Take a screenshot!)
 

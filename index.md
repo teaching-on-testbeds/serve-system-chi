@@ -984,6 +984,7 @@ The Triton client comes with a performance analyzer, which we can use to send re
 
 
 ```bash
+# runs inside Jupyter container
 perf_analyzer -u triton_server:8000  -m food_classifier  --input-data input.json -b 1 
 ```
 
@@ -1124,6 +1125,7 @@ to make sure the server comes up and is ready.
 Before we benchmark this service again, let's get some pre-benchmark stats about how many requests have been served, broken down by batch size. (If you've just restarted the server, it would be zero!)
 
 ```bash
+# runs inside Jupyter container
 curl http://triton_server:8000/v2/models/food_classifier/versions/1/stats
 ```
 
@@ -1134,6 +1136,7 @@ Then, run the benchmark:
 
 
 ```bash
+# runs inside Jupyter container
 perf_analyzer -u triton_server:8000  -m food_classifier  --input-data input.json -b 1 --concurrency-range 8
 ```
 
@@ -1151,6 +1154,7 @@ and get per-batch stats again:
 
 
 ```bash
+# runs inside Jupyter container
 curl http://triton_server:8000/v2/models/food_classifier/versions/1/stats
 ```
 
@@ -1241,6 +1245,7 @@ Then, benchmark *this* service with increased concurrency:
 
 
 ```bash
+# runs inside Jupyter container
 perf_analyzer -u triton_server:8000  -m food_classifier  --input-data input.json -b 1 --concurrency-range 8
 ```
 
@@ -1329,6 +1334,7 @@ Then, re-run our benchmark:
 
 
 ```bash
+# runs inside Jupyter container
 perf_analyzer -u triton_server:8000  -m food_classifier  --input-data input.json -b 1 --concurrency-range 8
 ```
 
@@ -1426,6 +1432,7 @@ Let's benchmark our service. Our ONNX model won't accept image bytes directly - 
 
 
 ```bash
+# runs inside Jupyter container
 perf_analyzer -u triton_server:8000  -m food_classifier_onnx -b 1 --shape IMAGE:3,224,224 
 ```
 
@@ -1505,6 +1512,7 @@ Watch the `nvtop` output as you run this test! (Take a screenshot!)
 
 
 ```bash
+# runs inside Jupyter container
 perf_analyzer -u triton_server:8000  -m food_classifier_onnx -b 1 --shape IMAGE:3,224,224 --concurrency-range 8 
 ```
 
@@ -1527,6 +1535,7 @@ Let's see how we do with even higher concurrency:
 
 
 ```bash
+# runs inside Jupyter container
 perf_analyzer -u triton_server:8000  -m food_classifier_onnx -b 1 --shape IMAGE:3,224,224 --concurrency-range 16  
 ```
 

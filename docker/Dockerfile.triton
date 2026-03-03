@@ -2,9 +2,10 @@
 FROM nvcr.io/nvidia/tritonserver:24.10-py3
 
 # Install necessary dependencies
+# Pin torch/torchvision to 2.4.x - last version supporting P100 (sm_60)
 RUN pip install --no-cache-dir \
     pillow \
-    torch torchvision \
+    torch==2.4.0 torchvision==0.19.0 \
     onnxruntime-gpu
 
 # Expose Triton ports

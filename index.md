@@ -20,9 +20,11 @@ For this experiment, we will provision one bare-metal node with two NVIDIA P100 
 
 
 
+Continue with `1_create_lease.ipynb`.
+
+
+
 ## Create a lease for a GPU server
-
-
 
 To use bare metal resources on Chameleon, we must reserve them in advance. For this experiment, we will reserve a 3-hour block on a bare metal node with 2x P100 GPU.
 
@@ -31,27 +33,21 @@ We can use the OpenStack graphical user interface, Horizon, to submit a lease. T
 * from the [Chameleon website](https://chameleoncloud.org/)
 * click "Experiment" > "CHI@TACC"
 * log in if prompted to do so
-* check the project drop-down menu near the top left (which shows e.g. “CHI-XXXXXX”), and make sure the correct project is selected.
+* check the project drop-down menu near the top left (which shows e.g. "CHI-XXXXXX"), and make sure the correct project is selected.
 
 
 
-Then, 
+Then,
 
-* On the left side, click on "Reservations" > "Leases", and then click on "Host Calendar". In the "Node type" drop down menu, change the type to `gpu_p100` to see the schedule of availability. You may change the date range setting to "30 days" to see a longer time scale. Note that the dates and times in this display are in UTC. You can use [WolframAlpha](https://www.wolframalpha.com/) or equivalent to convert to your local time zone. 
-* Once you have identified an available three-hour block in UTC time that works for you in your local time zone, make a note of:
-  * the start and end time of the time you will try to reserve. (Note that if you mouse over an existing reservation, a pop up will show you the exact start and end time of that reservation.)
-  * and the node name.
-* Then, on the left side, click on "Reservations" > "Leases", and then click on "Create Lease":
-  * set the "Name" to <code>serve_system_<b>netID</b></code> where in place of <code><b>netID</b></code> you substitute your actual net ID.
-  * set the start date and time in UTC. To make scheduling smoother, please start your lease on an hour boundary, e.g. `XX:00`.
-  * modify the lease length (in days) until the end date is correct. Then, set the end time. To be mindful of other users, you should limit your lease time to three hours as directed. Also, to avoid a potential race condition that occurs when one lease starts immediately after another lease ends, you should end your lease five minutes before the end of an hour, e.g. at `YY:55`.
-  * Click "Next".
-* On the "Hosts" tab, 
-  * check the "Reserve hosts" box
-  * leave the "Minimum number of hosts" and "Maximum number of hosts" at 1
-  * in "Resource properties", specify the node name that you identified earlier.
-* Click "Next". Then, click "Create". (We won't include any network resources in this lease.)
-  
+* On the left side, click on "Reservations" > "Leases", and then click on "Host Calendar". In the "Node type" drop down menu, change the type to `gpu_p100` to see the schedule of availability. You may change the date range setting to "30 days" to see a longer time scale. Note that the dates and times in this display are in UTC. You can use [WolframAlpha](https://www.wolframalpha.com/) or equivalent to convert to your local time zone.
+* Once you have identified an available three-hour block in UTC time that works for you in your local time zone, on the left side, click on the name of the node you want to reserve.
+* Set the "Name" to `serve_system_netID`, replacing `netID` with your actual net ID.
+* Set the start date and time in UTC. To make scheduling smoother, please start your lease on an hour boundary, e.g. `XX:00`.
+* Modify the lease length (in days) until the end date is correct. Then, set the end time. To be mindful of other users, you should limit your lease time to three hours as directed. Also, to avoid a potential race condition that occurs when one lease starts immediately after another lease ends, you should end your lease ten minutes before the end of an hour, e.g. at `YY:50`.
+* Click "Next".
+* On the "Hosts" tab, confirm that the node you selected is listed in the "Resource properties" section, and click "Next".
+* Then, click "Create". (We won't include any network resources in this lease.)
+
 Your lease status should show as "Pending". Click on the lease to see an overview. It will show the start time and end time, and it will show the name of the physical host that is reserved for you as part of your lease. Make sure that the lease details are correct.
 
 
@@ -62,12 +58,12 @@ Since you will need the full lease time to actually execute your experiment, you
 
 ## At the beginning of your GPU server lease
 
-
-At the beginning of your GPU lease time, you will continue with the next step, in which you bring up and configure a bare metal instance! To begin this step, open this experiment on Trovi:
+At the beginning of your GPU lease time, you will continue with the next step, in which you bring up and configure a bare metal instance. To begin this step, open this experiment on Trovi:
 
 * Use this link: [Model optimizations for serving](https://chameleoncloud.org/experiment/share/45097b76-3b24-472d-9b23-d522e795b2e0) on Trovi
-* Then, click “Launch on Chameleon”. This will start a new Jupyter server for you, with the experiment materials already in it, including the notebok to bring up the bare metal server.
+* Then, click "Launch on Chameleon". This will start a new Jupyter server for you, with the experiment materials already in it, including the notebook to bring up the bare metal server.
 
+Inside the `serve-system-chi` directory, continue with `2_create_server_nvidia.ipynb`.
 
 
 
@@ -83,6 +79,7 @@ Run the following cell, and make sure the correct project is selected. Also chan
 
 
 ```python
+# runs in Chameleon Jupyter environment
 from chi import server, context, lease
 import os
 
@@ -96,6 +93,7 @@ Change the string in the following cell to reflect the name of *your* lease (**w
 
 
 ```python
+# runs in Chameleon Jupyter environment
 l = lease.get_lease(f"serve_system_netID") 
 l.show()
 ```
@@ -116,6 +114,7 @@ We will use the lease to bring up a server with the `CC-Ubuntu24.04-CUDA` disk i
 
 
 ```python
+# runs in Chameleon Jupyter environment
 username = os.getenv('USER') # all exp resources will have this prefix
 s = server.Server(
     f"node-serve-system-{username}", 
@@ -134,10 +133,12 @@ Then, we'll associate a floating IP with the instance, so that we can access it 
 
 
 ```python
+# runs in Chameleon Jupyter environment
 s.associate_floating_ip()
 ```
 
 ```python
+# runs in Chameleon Jupyter environment
 s.refresh()
 s.check_connectivity()
 ```
@@ -147,6 +148,7 @@ In the output below, make a note of the floating IP that has been assigned to yo
 
 
 ```python
+# runs in Chameleon Jupyter environment
 s.refresh()
 s.show(type="widget")
 ```
@@ -161,6 +163,7 @@ Now, we can use `python-chi` to execute commands on the instance, to set it up. 
 
 
 ```python
+# runs in Chameleon Jupyter environment
 s.execute("git clone https://github.com/teaching-on-testbeds/serve-system-chi")
 ```
 
@@ -172,6 +175,7 @@ To use common deep learning frameworks like Tensorflow or PyTorch, and ML traini
 
 
 ```python
+# runs in Chameleon Jupyter environment
 s.execute("curl -sSL https://get.docker.com/ | sudo sh")
 s.execute("sudo groupadd -f docker; sudo usermod -aG docker $USER")
 ```
@@ -184,6 +188,7 @@ We will also install the NVIDIA container toolkit, with which we can access GPUs
 
 
 ```python
+# runs in Chameleon Jupyter environment
 s.execute("curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
   && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
     sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
@@ -202,6 +207,7 @@ and, install `nvtop` -
 
 
 ```python
+# runs in Chameleon Jupyter environment
 s.execute("sudo apt -y install nvtop")
 ```
 
@@ -219,7 +225,6 @@ where
 
 * in place of `~/.ssh/id_rsa_chameleon`, substitute the path to your own key that you had uploaded to CHI@TACC
 * in place of `A.B.C.D`, use the floating IP address you just associated to your instance.
-
 
 
 
@@ -361,7 +366,7 @@ docker exec jupyter jupyter server list
 Look for a line like
 
 ```
-http://localhost:8888/lab?token=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+http://localhost:8888/?token=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
 
 Paste this into a browser tab, but in place of `localhost`, substitute the floating IP assigned to your instance, to open the Jupyter notebook interface that is running *on your compute instance*.
@@ -389,6 +394,7 @@ Our request needs to be in the form of a base64-encoded image. Run
 
 
 ```python
+# runs inside Jupyter container
 import base64
 image_path = "test_image.jpeg"
 with open(image_path, 'rb') as f:
@@ -437,12 +443,14 @@ Now that we know everything *works*, let's get some quick performance numbers fr
 
 
 ```python
+# runs inside Jupyter container
 import requests
 import time
 import numpy as np
 ```
 
 ```python
+# runs inside Jupyter container
 FASTAPI_URL = "http://fastapi_server:8000/predict"
 payload = {"image": encoded_str}
 num_requests = 100
@@ -461,6 +469,7 @@ for _ in range(num_requests):
 
 
 ```python
+# runs inside Jupyter container
 inference_times = np.array(inference_times)
 median_time = np.median(inference_times)
 percentile_95 = np.percentile(inference_times, 95)
@@ -536,6 +545,7 @@ Then, re-do our quick benchmark.
 
 
 ```python
+# runs inside Jupyter container
 FASTAPI_URL = "http://fastapi_server:8000/predict"
 payload = {"image": encoded_str}
 num_requests = 100
@@ -554,6 +564,7 @@ for _ in range(num_requests):
 
 
 ```python
+# runs inside Jupyter container
 inference_times = np.array(inference_times)
 median_time = np.median(inference_times)
 percentile_95 = np.percentile(inference_times, 95)
@@ -588,6 +599,7 @@ However, when there are multiple concurrent requests, it will be much slower. Fo
 
 
 ```python
+# runs inside Jupyter container
 import concurrent.futures
 
 def send_request(payload):
@@ -623,6 +635,7 @@ total_time = time.time() - start_time
 
 
 ```python
+# runs inside Jupyter container
 inference_times = np.array(inference_times)
 median_time = np.median(inference_times)
 percentile_95 = np.percentile(inference_times, 95)
@@ -958,7 +971,7 @@ docker exec jupyter jupyter server list
 Look for a line like
 
 ```
-http://localhost:8888/lab?token=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+http://localhost:8888/?token=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
 
 Paste this into a browser tab, but in place of `localhost`, substitute the floating IP assigned to your instance, to open the Jupyter notebook interface that is running *on your compute instance*.

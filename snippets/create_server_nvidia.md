@@ -15,6 +15,7 @@ Run the following cell, and make sure the correct project is selected. Also chan
 
 ::: {.cell .code}
 ```python
+# runs in Chameleon Jupyter environment
 from chi import server, context, lease
 import os
 
@@ -32,6 +33,7 @@ Change the string in the following cell to reflect the name of *your* lease (**w
 
 ::: {.cell .code}
 ```python
+# runs in Chameleon Jupyter environment
 l = lease.get_lease(f"serve_system_netID") 
 l.show()
 ```
@@ -58,6 +60,7 @@ We will use the lease to bring up a server with the `CC-Ubuntu24.04-CUDA` disk i
 
 ::: {.cell .code}
 ```python
+# runs in Chameleon Jupyter environment
 username = os.getenv('USER') # all exp resources will have this prefix
 s = server.Server(
     f"node-serve-system-{username}", 
@@ -82,12 +85,14 @@ Then, we'll associate a floating IP with the instance, so that we can access it 
 
 ::: {.cell .code}
 ```python
+# runs in Chameleon Jupyter environment
 s.associate_floating_ip()
 ```
 :::
 
 ::: {.cell .code}
 ```python
+# runs in Chameleon Jupyter environment
 s.refresh()
 s.check_connectivity()
 ```
@@ -101,6 +106,7 @@ In the output below, make a note of the floating IP that has been assigned to yo
 
 ::: {.cell .code}
 ```python
+# runs in Chameleon Jupyter environment
 s.refresh()
 s.show(type="widget")
 ```
@@ -119,6 +125,7 @@ Now, we can use `python-chi` to execute commands on the instance, to set it up. 
 
 ::: {.cell .code}
 ```python
+# runs in Chameleon Jupyter environment
 s.execute("git clone https://github.com/teaching-on-testbeds/serve-system-chi")
 ```
 :::
@@ -134,6 +141,7 @@ To use common deep learning frameworks like Tensorflow or PyTorch, and ML traini
 
 ::: {.cell .code}
 ```python
+# runs in Chameleon Jupyter environment
 s.execute("curl -sSL https://get.docker.com/ | sudo sh")
 s.execute("sudo groupadd -f docker; sudo usermod -aG docker $USER")
 ```
@@ -150,6 +158,7 @@ We will also install the NVIDIA container toolkit, with which we can access GPUs
 
 ::: {.cell .code}
 ```python
+# runs in Chameleon Jupyter environment
 s.execute("curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
   && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
     sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
@@ -172,6 +181,7 @@ and, install `nvtop` -
 
 ::: {.cell .code}
 ```python
+# runs in Chameleon Jupyter environment
 s.execute("sudo apt -y install nvtop")
 ```
 :::
@@ -193,4 +203,3 @@ where
 * in place of `A.B.C.D`, use the floating IP address you just associated to your instance.
 
 :::
-

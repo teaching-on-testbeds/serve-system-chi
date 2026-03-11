@@ -145,7 +145,7 @@ docker exec jupyter jupyter server list
 Look for a line like
 
 ```
-http://localhost:8888/lab?token=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+http://localhost:8888/?token=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
 
 Paste this into a browser tab, but in place of `localhost`, substitute the floating IP assigned to your instance, to open the Jupyter notebook interface that is running *on your compute instance*.
@@ -177,6 +177,7 @@ Our request needs to be in the form of a base64-encoded image. Run
 
 ::: {.cell .code}
 ```python
+# runs inside Jupyter container
 import base64
 image_path = "test_image.jpeg"
 with open(image_path, 'rb') as f:
@@ -231,6 +232,7 @@ Now that we know everything *works*, let's get some quick performance numbers fr
 
 ::: {.cell .code}
 ```python
+# runs inside Jupyter container
 import requests
 import time
 import numpy as np
@@ -239,6 +241,7 @@ import numpy as np
 
 ::: {.cell .code}
 ```python
+# runs inside Jupyter container
 FASTAPI_URL = "http://fastapi_server:8000/predict"
 payload = {"image": encoded_str}
 num_requests = 100
@@ -259,6 +262,7 @@ for _ in range(num_requests):
 
 ::: {.cell .code}
 ```python
+# runs inside Jupyter container
 inference_times = np.array(inference_times)
 median_time = np.median(inference_times)
 percentile_95 = np.percentile(inference_times, 95)
@@ -338,6 +342,7 @@ Then, re-do our quick benchmark.
 
 ::: {.cell .code}
 ```python
+# runs inside Jupyter container
 FASTAPI_URL = "http://fastapi_server:8000/predict"
 payload = {"image": encoded_str}
 num_requests = 100
@@ -358,6 +363,7 @@ for _ in range(num_requests):
 
 ::: {.cell .code}
 ```python
+# runs inside Jupyter container
 inference_times = np.array(inference_times)
 median_time = np.median(inference_times)
 percentile_95 = np.percentile(inference_times, 95)
@@ -396,6 +402,7 @@ However, when there are multiple concurrent requests, it will be much slower. Fo
 
 ::: {.cell .code}
 ```python
+# runs inside Jupyter container
 import concurrent.futures
 
 def send_request(payload):
@@ -433,6 +440,7 @@ total_time = time.time() - start_time
 
 ::: {.cell .code}
 ```python
+# runs inside Jupyter container
 inference_times = np.array(inference_times)
 median_time = np.median(inference_times)
 percentile_95 = np.percentile(inference_times, 95)

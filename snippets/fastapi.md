@@ -2,6 +2,8 @@
 
 ::: {.cell .markdown}
 
+### Benchmarking FastAPI service
+
 Continue here after opening `workspace/4_fastapi.ipynb` in the Jupyter container.
 
 
@@ -29,7 +31,7 @@ Our request needs to be in the form of a base64-encoded image. Run
 
 ::: {.cell .code}
 ```python
-# runs inside Jupyter container
+# runs inside the Jupyter container on node-serve-system
 import base64
 image_path = "test_image.jpeg"
 with open(image_path, 'rb') as f:
@@ -84,7 +86,7 @@ Now that we know everything *works*, let's get some quick performance numbers fr
 
 ::: {.cell .code}
 ```python
-# runs inside Jupyter container
+# runs inside the Jupyter container on node-serve-system
 import requests
 import time
 import numpy as np
@@ -93,7 +95,7 @@ import numpy as np
 
 ::: {.cell .code}
 ```python
-# runs inside Jupyter container
+# runs inside the Jupyter container on node-serve-system
 FASTAPI_URL = "http://fastapi_server:8000/predict"
 payload = {"image": encoded_str}
 num_requests = 100
@@ -114,7 +116,7 @@ for _ in range(num_requests):
 
 ::: {.cell .code}
 ```python
-# runs inside Jupyter container
+# runs inside the Jupyter container on node-serve-system
 inference_times = np.array(inference_times)
 median_time = np.median(inference_times)
 percentile_95 = np.percentile(inference_times, 95)
@@ -192,7 +194,7 @@ Then, re-do our quick benchmark.
 
 ::: {.cell .code}
 ```python
-# runs inside Jupyter container
+# runs inside the Jupyter container on node-serve-system
 FASTAPI_URL = "http://fastapi_server:8000/predict"
 payload = {"image": encoded_str}
 num_requests = 100
@@ -213,7 +215,7 @@ for _ in range(num_requests):
 
 ::: {.cell .code}
 ```python
-# runs inside Jupyter container
+# runs inside the Jupyter container on node-serve-system
 inference_times = np.array(inference_times)
 median_time = np.median(inference_times)
 percentile_95 = np.percentile(inference_times, 95)
@@ -252,7 +254,7 @@ However, when there are multiple concurrent requests, it will be much slower. Fo
 
 ::: {.cell .code}
 ```python
-# runs inside Jupyter container
+# runs inside the Jupyter container on node-serve-system
 import concurrent.futures
 
 def send_request(payload):
@@ -290,7 +292,7 @@ total_time = time.time() - start_time
 
 ::: {.cell .code}
 ```python
-# runs inside Jupyter container
+# runs inside the Jupyter container on node-serve-system
 inference_times = np.array(inference_times)
 median_time = np.median(inference_times)
 percentile_95 = np.percentile(inference_times, 95)

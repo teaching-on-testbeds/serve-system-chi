@@ -379,6 +379,8 @@ Then, in the file browser on the left side, open the "work" directory and then c
 
 
 
+### Benchmarking FastAPI service
+
 Continue here after opening `workspace/4_fastapi.ipynb` in the Jupyter container.
 
 
@@ -402,7 +404,7 @@ Our request needs to be in the form of a base64-encoded image. Run
 
 
 ```python
-# runs inside Jupyter container
+# runs inside the Jupyter container on node-serve-system
 import base64
 image_path = "test_image.jpeg"
 with open(image_path, 'rb') as f:
@@ -451,14 +453,14 @@ Now that we know everything *works*, let's get some quick performance numbers fr
 
 
 ```python
-# runs inside Jupyter container
+# runs inside the Jupyter container on node-serve-system
 import requests
 import time
 import numpy as np
 ```
 
 ```python
-# runs inside Jupyter container
+# runs inside the Jupyter container on node-serve-system
 FASTAPI_URL = "http://fastapi_server:8000/predict"
 payload = {"image": encoded_str}
 num_requests = 100
@@ -477,7 +479,7 @@ for _ in range(num_requests):
 
 
 ```python
-# runs inside Jupyter container
+# runs inside the Jupyter container on node-serve-system
 inference_times = np.array(inference_times)
 median_time = np.median(inference_times)
 percentile_95 = np.percentile(inference_times, 95)
@@ -551,7 +553,7 @@ Then, re-do our quick benchmark.
 
 
 ```python
-# runs inside Jupyter container
+# runs inside the Jupyter container on node-serve-system
 FASTAPI_URL = "http://fastapi_server:8000/predict"
 payload = {"image": encoded_str}
 num_requests = 100
@@ -570,7 +572,7 @@ for _ in range(num_requests):
 
 
 ```python
-# runs inside Jupyter container
+# runs inside the Jupyter container on node-serve-system
 inference_times = np.array(inference_times)
 median_time = np.median(inference_times)
 percentile_95 = np.percentile(inference_times, 95)
@@ -605,7 +607,7 @@ However, when there are multiple concurrent requests, it will be much slower. Fo
 
 
 ```python
-# runs inside Jupyter container
+# runs inside the Jupyter container on node-serve-system
 import concurrent.futures
 
 def send_request(payload):
@@ -641,7 +643,7 @@ total_time = time.time() - start_time
 
 
 ```python
-# runs inside Jupyter container
+# runs inside the Jupyter container on node-serve-system
 inference_times = np.array(inference_times)
 median_time = np.median(inference_times)
 percentile_95 = np.percentile(inference_times, 95)
@@ -982,7 +984,7 @@ http://localhost:8888/?token=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 Paste this into a browser tab, but in place of `localhost`, substitute the floating IP assigned to your instance, to open the Jupyter notebook interface that is running *on your compute instance*.
 
-Then, in the file browser on the left side, open the "work" directory and then click on the `5_triton.ipynb` notebook to continue.
+Then, in the file browser on the left side, open the "work" directory and then click on the `6_triton.ipynb` notebook to continue.
 
 Meanwhile, on the host, run
 
@@ -996,6 +998,12 @@ to monitor GPU usage - we will refer back to this a few times as we run through 
 
 
 
+### Benchmarking Triton service
+
+
+Continue here after opening `workspace/6_triton.ipynb` in the Jupyter container.
+
+
 
 ### Serving a PyTorch model
 
@@ -1004,7 +1012,7 @@ The Triton client comes with a performance analyzer, which we can use to send re
 
 
 ```bash
-# runs inside Jupyter container
+# runs inside the Jupyter container on node-serve-system
 perf_analyzer -u triton_server:8000  -m food_classifier  --input-data input.json -b 1 
 ```
 
@@ -1032,7 +1040,7 @@ Let's further exercise this service. In the command above, a single client sends
 
 
 ```bash
-# runs inside Jupyter container
+# runs inside the Jupyter container on node-serve-system
 perf_analyzer -u triton_server:8000  -m food_classifier  --input-data input.json -b 1 --concurrency-range 8
 ```
 
@@ -1050,7 +1058,7 @@ While the inference time (`compute infer`) remains low, the overall system laten
 
 
 ```bash
-# runs inside Jupyter container
+# runs inside the Jupyter container on node-serve-system
 perf_analyzer -u triton_server:8000  -m food_classifier  --input-data input.json -b 1 --concurrency-range 16
 ```
 
@@ -1066,11 +1074,11 @@ Concurrency: 16, throughput: 52.3609 infer/sec, latency 302804 usec
 
 Although the delay is large (over 100 ms), it's not because of inadequate compute - if you check the `nvtop` display on the host while the test above is running, you will note low GPU utilization! Take a screenshot of the `nvtop` output when this test is running.
 
-We *could* get more throughput without increasing prediction latency, by batching requests:
+We *could* get more throughput without increasing prediction latency, by batching requests. Here, we have a single client sending requests in batches of 16 at a time:
 
 
 ```bash
-# runs inside Jupyter container
+# runs inside the Jupyter container on node-serve-system
 perf_analyzer -u triton_server:8000  -m food_classifier  --input-data input.json -b 16 --concurrency-range 1
 ```
 
@@ -1085,113 +1093,16 @@ Concurrency: 1, throughput: 656.63 infer/sec, latency 24282 usec
 -->
 
 
+We can see that a batch of 16 requests doesn't have much higher inference time than a single request.
+
 But, that's not very helpful in a situation when requests come from individual users, one at a time.
 
 
 
 
-
-### Dynamic batching
-
-Earlier, we noted that our model can achieve higher throughput with low latency by performing inference on batches of input samples, instead of individual samples. However, our client sends requests with individual samples.
-
-To improve performance, we can ask the Triton server to batch incoming requests whenever possible, and send them through the server together instead of a sequence. In other words, if the server is ready to handle the next request, and it finds four requests waiting in the queue, it should serve those four as a batch instead of just taking the next request in line.
-
-
-
-
-Let's edit the model configuration:
-
-```bash
-# runs on node-serve-system
-nano ~/serve-system-chi/models/food_classifier/config.pbtxt
-```
-
-and at the end, add
-
-```
-dynamic_batching {
-  preferred_batch_size: [4, 6, 8, 10]
-  max_queue_delay_microseconds: 100
-}
-
-```
-
-Save the file (use Ctrl+O then Enter, then Ctrl+X).
-
-Re-build the container image with this change:
-
-```bash
-# runs on node-serve-system
-docker compose -f ~/serve-system-chi/docker/docker-compose-triton.yaml build triton_server
-```
-
-and then bring the server back up:
-
-```bash
-# runs on node-serve-system
-docker compose -f ~/serve-system-chi/docker/docker-compose-triton.yaml up triton_server --force-recreate -d
-```
-
-and use
-
-```bash
-# runs on node-serve-system
-docker logs triton_server
-```
-
-to make sure the server comes up and is ready. 
-
-Before we benchmark this service again, let's get some pre-benchmark stats about how many requests have been served, broken down by batch size. (If you've just restarted the server, it would be zero!)
-
-```bash
-# runs inside Jupyter container
-curl http://triton_server:8000/v2/models/food_classifier/versions/1/stats
-```
-
-
-
-Then, run the benchmark:
-
-
-
-```bash
-# runs inside Jupyter container
-perf_analyzer -u triton_server:8000  -m food_classifier  --input-data input.json -b 1 --concurrency-range 8
-```
-
-<!--
-
-    Avg request latency: 100423 usec (overhead 6 usec + queue 44892 usec + compute input 197 usec + compute infer 55111 usec + compute output 216 usec)
-
-Inferences/Second vs. Client Average Batch Latency
-Concurrency: 8, throughput: 78.6276 infer/sec, latency 101232 usec
-
--->
-
-
-and get per-batch stats again:
-
-
-```bash
-# runs inside Jupyter container
-curl http://triton_server:8000/v2/models/food_classifier/versions/1/stats
-```
-
-<!--
-
-{"model_stats":[{"name":"food_classifier","version":"1","last_inference":1741928954242,"inference_count":1436,"execution_count":386,"inference_stats":{"success":{"count":1436,"ns":144129653806},"fail":{"count":0,"ns":0},"queue":{"count":1436,"ns":64542800676},"compute_input":{"count":1436,"ns":283368073},"compute_infer":{"count":1436,"ns":78984688177},"compute_output":{"count":1436,"ns":309635270},"cache_hit":{"count":0,"ns":0},"cache_miss":{"count":0,"ns":0}},"response_stats":{},"batch_stats":[{"batch_size":1,"compute_input":{"count":26,"ns":1754466},"compute_infer":{"count":26,"ns":757012965},"compute_output":{"count":26,"ns":2038319}},{"batch_size":2,"compute_input":{"count":127,"ns":14474588},"compute_infer":{"count":127,"ns":3718519926},"compute_output":{"count":127,"ns":13184875}},{"batch_size":3,"compute_input":{"count":55,"ns":7182962},"compute_infer":{"count":55,"ns":2144383142},"compute_output":{"count":55,"ns":7683505}},{"batch_size":4,"compute_input":{"count":9,"ns":1446080},"compute_infer":{"count":9,"ns":456549788},"compute_output":{"count":9,"ns":1596636}},{"batch_size":5,"compute_input":{"count":73,"ns":14796021},"compute_infer":{"count":73,"ns":4268808423},"compute_output":{"count":73,"ns":16766209}},{"batch_size":6,"compute_input":{"count":82,"ns":19691717},"compute_infer":{"count":82,"ns":5577222019},"compute_output":{"count":82,"ns":22604780}},{"batch_size":7,"compute_input":{"count":14,"ns":4742974},"compute_infer":{"count":14,"ns":1103416079},"compute_output":{"count":14,"ns":4618631}}],"memory_usage":[]}]}
-
--->
-
-
-Note that the stats show that some requests were served in batch sizes greater than 1, even though each client sent a single request at a time.
-
-
-
 ### Scaling up
 
-Another easy way to improve performance is to scale up! Let's edit the model configuration:
+One potential way to improve performance is to scale up! Let's edit the model configuration:
 
 ```bash
 # runs on node-serve-system
@@ -1265,7 +1176,7 @@ Then, benchmark *this* service with increased concurrency:
 
 
 ```bash
-# runs inside Jupyter container
+# runs inside the Jupyter container on node-serve-system
 perf_analyzer -u triton_server:8000  -m food_classifier  --input-data input.json -b 1 --concurrency-range 8
 ```
 
@@ -1354,7 +1265,7 @@ Then, re-run our benchmark:
 
 
 ```bash
-# runs inside Jupyter container
+# runs inside the Jupyter container on node-serve-system
 perf_analyzer -u triton_server:8000  -m food_classifier  --input-data input.json -b 1 --concurrency-range 8
 ```
 
@@ -1452,7 +1363,7 @@ Let's benchmark our service. Our ONNX model won't accept image bytes directly - 
 
 
 ```bash
-# runs inside Jupyter container
+# runs inside the Jupyter container on node-serve-system
 perf_analyzer -u triton_server:8000  -m food_classifier_onnx -b 1 --shape IMAGE:3,224,224 
 ```
 
@@ -1532,7 +1443,7 @@ Watch the `nvtop` output as you run this test! (Take a screenshot!)
 
 
 ```bash
-# runs inside Jupyter container
+# runs inside the Jupyter container on node-serve-system
 perf_analyzer -u triton_server:8000  -m food_classifier_onnx -b 1 --shape IMAGE:3,224,224 --concurrency-range 8 
 ```
 
@@ -1555,7 +1466,7 @@ Let's see how we do with even higher concurrency:
 
 
 ```bash
-# runs inside Jupyter container
+# runs inside the Jupyter container on node-serve-system
 perf_analyzer -u triton_server:8000  -m food_classifier_onnx -b 1 --shape IMAGE:3,224,224 --concurrency-range 16  
 ```
 

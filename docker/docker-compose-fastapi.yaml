@@ -23,7 +23,9 @@ services:
     volumes:
       - /home/cc/serve-system-chi/workspace:/home/jovyan/work # mount workspace
     command: >
-      bash -c "python3 -m pip install numpy && start-notebook.sh"
+      bash -c "python3 -m pip install numpy bash_kernel && \
+               python3 -m bash_kernel.install --sys-prefix && \
+               start-notebook.sh"
 
   flask:
     build:

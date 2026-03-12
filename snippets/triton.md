@@ -311,7 +311,7 @@ http://localhost:8888/?token=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 Paste this into a browser tab, but in place of `localhost`, substitute the floating IP assigned to your instance, to open the Jupyter notebook interface that is running *on your compute instance*.
 
-Then, in the file browser on the left side, open the "work" directory and then click on the `triton.ipynb` notebook to continue.
+Then, in the file browser on the left side, open the "work" directory and then click on the `5_triton.ipynb` notebook to continue.
 
 Meanwhile, on the host, run
 

@@ -226,6 +226,8 @@ where
 * in place of `~/.ssh/id_rsa_chameleon`, substitute the path to your own key that you had uploaded to CHI@TACC
 * in place of `A.B.C.D`, use the floating IP address you just associated to your instance.
 
+After connecting over SSH, continue with `3_fastapi_setup.ipynb`.
+
 
 
 
@@ -371,7 +373,13 @@ http://localhost:8888/?token=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 Paste this into a browser tab, but in place of `localhost`, substitute the floating IP assigned to your instance, to open the Jupyter notebook interface that is running *on your compute instance*.
 
-Then, in the file browser on the left side, open the "work" directory and then click on the `fastapi.ipynb` notebook to continue.
+Then, in the file browser on the left side, open the "work" directory and then click on the `4_fastapi.ipynb` notebook to continue.
+
+
+
+
+
+Continue here after opening `workspace/4_fastapi.ipynb` in the Jupyter container.
 
 
 
@@ -478,7 +486,7 @@ throughput = num_requests / inference_times.sum()
 
 print(f"Median inference time: {1000*median_time:.4f} ms")
 print(f"95th percentile: {1000*percentile_95:.4f} ms")
-print(f"99th percentile: {1000*percentile_99:.4f} seconds")
+print(f"99th percentile: {1000*percentile_99:.4f} ms")
 print(f"Throughput: {throughput:.2f} requests/sec")
 ```
 
@@ -487,7 +495,7 @@ print(f"Throughput: {throughput:.2f} requests/sec")
 
 Median inference time: 17.2018 ms
 95th percentile: 19.4870 ms
-99th percentile: 22.2096 seconds
+99th percentile: 22.2096 ms
 Throughput: 57.16 requests/sec
 
 -->
@@ -539,8 +547,6 @@ Repeat the same steps as before to test the FastAPI endpoint and its integration
 
 Then, re-do our quick benchmark. 
 
-(This host is running an older GPU, so we won't attempt to use the TensorRT execution provider for ONNX, because modern versions no longer support it. So, our results won't be *too* dramatic.)
-
 
 
 
@@ -573,7 +579,7 @@ throughput = num_requests / inference_times.sum()
 
 print(f"Median inference time: {1000*median_time:.4f} ms")
 print(f"95th percentile: {1000*percentile_95:.4f} ms")
-print(f"99th percentile: {1000*percentile_99:.4f} seconds")
+print(f"99th percentile: {1000*percentile_99:.4f} ms")
 print(f"Throughput: {throughput:.2f} requests/sec")
 ```
 
@@ -584,7 +590,7 @@ print(f"Throughput: {throughput:.2f} requests/sec")
 
 Median inference time: 9.2471 ms
 95th percentile: 11.2387 ms
-99th percentile: 16.1481 seconds
+99th percentile: 16.1481 ms
 Throughput: 80.66 requests/sec
 
 
@@ -644,7 +650,7 @@ throughput = num_requests / total_time
 
 print(f"Median inference time: {1000*median_time:.4f} ms")
 print(f"95th percentile: {1000*percentile_95:.4f} ms")
-print(f"99th percentile: {1000*percentile_99:.4f} seconds")
+print(f"99th percentile: {1000*percentile_99:.4f} ms")
 print(f"Throughput: {throughput:.2f} requests/sec")
 ```
 
@@ -976,7 +982,7 @@ http://localhost:8888/?token=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 Paste this into a browser tab, but in place of `localhost`, substitute the floating IP assigned to your instance, to open the Jupyter notebook interface that is running *on your compute instance*.
 
-Then, in the file browser on the left side, open the "work" directory and then click on the `triton.ipynb` notebook to continue.
+Then, in the file browser on the left side, open the "work" directory and then click on the `5_triton.ipynb` notebook to continue.
 
 Meanwhile, on the host, run
 

@@ -3,14 +3,18 @@ all: \
 	0_intro.ipynb \
 	1_create_lease.ipynb \
 	2_create_server_nvidia.ipynb \
-	workspace/fastapi.ipynb \
-	workspace/triton.ipynb
+	3_fastapi_setup.ipynb \
+	workspace/4_fastapi.ipynb \
+	workspace/5_triton.ipynb
 
 clean: 
 	rm index.md \
 	0_intro.ipynb \
 	1_create_lease.ipynb \
 	2_create_server_nvidia.ipynb \
+	3_fastapi_setup.ipynb \
+	workspace/4_fastapi.ipynb \
+	workspace/5_triton.ipynb \
 	workspace/fastapi.ipynb \
 	workspace/triton.ipynb
 
@@ -18,6 +22,7 @@ index.md: snippets/*.md
 	cat snippets/intro.md \
 		snippets/create_lease.md \
 		snippets/create_server_nvidia.md \
+		snippets/fastapi_setup.md \
 		snippets/fastapi.md \
 		snippets/triton.md \
 		> index.tmp.md
@@ -44,14 +49,20 @@ index.md: snippets/*.md
                 -o 2_create_server_nvidia.ipynb  
 	sed -i 's/attachment://g' 2_create_server_nvidia.ipynb
 
-workspace/fastapi.ipynb: snippets/fastapi.md
+3_fastapi_setup.ipynb: snippets/fastapi_setup.md
+	pandoc --resource-path=../ --embed-resources --standalone --wrap=none \
+                -i snippets/frontmatter_python.md snippets/fastapi_setup.md \
+                -o 3_fastapi_setup.ipynb  
+	sed -i 's/attachment://g' 3_fastapi_setup.ipynb
+
+workspace/4_fastapi.ipynb: snippets/fastapi.md
 	pandoc --resource-path=../ --embed-resources --standalone --wrap=none \
 				-i snippets/frontmatter_python.md snippets/fastapi.md \
-				-o workspace/fastapi.ipynb  
-	sed -i 's/attachment://g' workspace/fastapi.ipynb
+				-o workspace/4_fastapi.ipynb  
+	sed -i 's/attachment://g' workspace/4_fastapi.ipynb
 
-workspace/triton.ipynb : snippets/triton.md
+workspace/5_triton.ipynb : snippets/triton.md
 	pandoc --resource-path=../ --embed-resources --standalone --wrap=none \
 				-i snippets/frontmatter_bash.md snippets/triton.md \
-				-o workspace/triton.ipynb  
-	sed -i 's/attachment://g' workspace/triton.ipynb
+				-o workspace/5_triton.ipynb  
+	sed -i 's/attachment://g' workspace/5_triton.ipynb

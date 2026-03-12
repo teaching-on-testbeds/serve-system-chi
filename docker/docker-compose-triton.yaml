@@ -26,7 +26,7 @@ services:
       - /home/cc/serve-system-chi/workspace:/home/jovyan/work # mount workspace
     command: >
       bash -c "python3 -m pip install bash_kernel tritonclient[all] && 
-               python3 -m bash_kernel.install && start-notebook.sh"
+               python3 -m bash_kernel.install --sys-prefix && start-notebook.sh"
 
   flask:
     build:

@@ -202,4 +202,6 @@ where
 * in place of `~/.ssh/id_rsa_chameleon`, substitute the path to your own key that you had uploaded to CHI@TACC
 * in place of `A.B.C.D`, use the floating IP address you just associated to your instance.
 
+After connecting over SSH, continue with `3_fastapi_setup.ipynb`.
+
 :::

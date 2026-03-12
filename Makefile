@@ -8,7 +8,7 @@ all: \
 	workspace/5_triton.ipynb
 
 clean: 
-	rm index.md \
+	rm -f index.md \
 	0_intro.ipynb \
 	1_create_lease.ipynb \
 	2_create_server_nvidia.ipynb \

@@ -258,6 +258,8 @@ This uses a [Docker Compose configuration](https://github.com/teaching-on-testbe
 * one container that hosts the Flask app, which will serve the user interface and send inference requests to the Triton server
 * one Jupyter container with the Triton client installed, for us to conduct a performance evaluation of the Triton server
 
+Building the NVIDIA Triton Server container image for the first time normally takes about 20 minutes.
+
 
 Watch the logs from the Triton server as it starts up:
 

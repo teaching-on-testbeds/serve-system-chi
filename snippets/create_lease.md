@@ -3,7 +3,7 @@
 
 ## Create a lease for a GPU server
 
-To use bare metal resources on Chameleon, we must reserve them in advance. For this experiment, we will reserve a 3-hour block on a bare metal node with 2x P100 GPU.
+To use bare metal resources on Chameleon, we must reserve them in advance. For this experiment, we will reserve a 2 hour 50 minute block on a bare metal node with 2x P100 GPU.
 
 We can use the OpenStack graphical user interface, Horizon, to submit a lease. To access this interface,
 
@@ -18,11 +18,11 @@ We can use the OpenStack graphical user interface, Horizon, to submit a lease. T
 
 Then,
 
-* On the left side, click on "Reservations" > "Leases", and then click on "Host Calendar". In the "Node type" drop down menu, change the type to `gpu_p100` to see the schedule of availability. You may change the date range setting to "30 days" to see a longer time scale. Note that the dates and times in this display are in UTC. You can use [WolframAlpha](https://www.wolframalpha.com/) or equivalent to convert to your local time zone.
+* On the left side, click on "Reservations" > "Leases", and then click on "Host Calendar". In the "Node type" drop down menu, change the type to `gpu_p100` to see the schedule of availability. (However, you should avoid `c11-13`, on which one GPU is faulty.) You may change the date range setting to "30 days" to see a longer time scale. Note that the dates and times in this display are in UTC. 
 * Once you have identified an available three-hour block in UTC time that works for you in your local time zone, on the left side, click on the name of the node you want to reserve.
 * Set the "Name" to `serve_system_netID`, replacing `netID` with your actual net ID.
 * Set the start date and time in UTC. To make scheduling smoother, please start your lease on an hour boundary, e.g. `XX:00`.
-* Modify the lease length (in days) until the end date is correct. Then, set the end time. To be mindful of other users, you should limit your lease time to three hours as directed. Also, to avoid a potential race condition that occurs when one lease starts immediately after another lease ends, you should end your lease ten minutes before the end of an hour, e.g. at `YY:50`.
+* Modify the lease length (in days) until the end date is correct. Then, set the end time. To be mindful of other users, set your lease to 2 hours 50 minutes. Also, to avoid a potential race condition that occurs when one lease starts immediately after another lease ends, you should end your lease ten minutes before the end of an hour, e.g. at `YY:50`.
 * Click "Next".
 * On the "Hosts" tab, confirm that the node you selected is listed in the "Resource properties" section, and click "Next".
 * Then, click "Create". (We won't include any network resources in this lease.)

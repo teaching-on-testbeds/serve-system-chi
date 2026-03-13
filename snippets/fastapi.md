@@ -313,20 +313,15 @@ print(f"Throughput: {throughput:.2f} requests/sec")
 
 When a request arrives at the server and finds it busy processing another request, it waits in a queue until it can be served.  This queuing delay can be a significant part of the overall prediction delay, when there is a high degree of concurrency. We will attempt to address this in the next section!
 
-In the meantime, bring down your current inference service with:
+In the meantime, download this entire notebook for later reference.
+
+Then, bring down your current inference service with:
 
 ```bash
 # runs on node-serve-system
 docker compose -f ~/serve-system-chi/docker/docker-compose-fastapi.yaml down
 ```
 
-
 :::
 
 
-
-::: {.cell .markdown}
-
-Then, download this entire notebook for later reference.
-
-:::

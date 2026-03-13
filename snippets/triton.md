@@ -70,7 +70,10 @@ Concurrency: 8, throughput: 52.3786 infer/sec, latency 151983 usec
 
 ::: {.cell .markdown}
 
-While the inference time (`compute infer`) remains low, the overall system latency is high because of `queue` delay. Only one sample is processed at a time, and other samples have to wait in a queue for their turn. Here, since there are 8 concurrent clients sending continuous requests, the delay is approximately 8x the inference delay. With more concurrent requests, the queuing delay would grow even larger:
+While the inference time (`compute infer`) is similar to the previous example, the overall system latency is high because of `queue` delay. Only one sample is processed at a time, and other samples have to wait in a queue for their turn. Here, since there are 8 concurrent clients sending continuous requests, the delay is approximately 8x the inference delay. 
+
+
+With more concurrent requests, the queuing delay would grow even larger:
 
 :::
 
@@ -117,7 +120,7 @@ Concurrency: 1, throughput: 656.63 infer/sec, latency 24282 usec
 
 ::: {.cell .markdown}
 
-We can see that a batch of 16 requests doesn't have much higher inference time than a single request.
+We can see that a batch of 16 requests doesn't have much higher inference time than a single request. The throughput is substantially higher when we can serve in batches.
 
 But, that's not very helpful in a situation when requests come from individual users, one at a time.
 :::
@@ -126,7 +129,7 @@ But, that's not very helpful in a situation when requests come from individual u
 
 ::: {.cell .markdown}
 
-### Scaling up
+### Scaling up PyTorch model
 
 One potential way to improve performance is to scale up! Let's edit the model configuration:
 
@@ -221,7 +224,7 @@ Concurrency: 8, throughput: 192.849 infer/sec, latency 41374 usec
 
 ::: {.cell .markdown}
 
-Although there is still some queuing delay (because our degree of concurrency, 8, is still higher than the number of server instances, 4), and the inference time is also increased due to sharing the compute resources, the prediction delay is still on the order of 10s of ms - not over 100ms, like it was previously with concurrency 8!
+There is still *some* queuing delay (because our degree of concurrency, 8, is still higher than the number of server instances, 4), and furthermore, the inference time is also increased due to sharing the compute resources. However, the prediction delay is on the order of 10s of ms - not over 100ms, like it was previously with concurrency 8!
 
 Also, if you look at the `nvtop` output on the host while running this test, you will observe higher GPU utilization than before (which is good! We want to use the GPU. Underutilization is bad.) (Take a screenshot!) However, we are still not fully utilizing the GPU.
 
@@ -386,7 +389,7 @@ and then bring the server back up:
 docker compose -f ~/serve-system-chi/docker/docker-compose-triton.yaml up triton_server --force-recreate -d
 ```
 
-use
+and use
 
 ```bash
 # runs on node-serve-system
@@ -402,7 +405,7 @@ Let's benchmark our service. Our ONNX model won't accept image bytes directly - 
 ::: {.cell .code}
 ```bash
 # runs inside the Jupyter container on node-serve-system
-perf_analyzer -u triton_server:8000  -m food_classifier_onnx -b 1 --shape IMAGE:3,224,224 
+perf_analyzer -u triton_server:8000  -m food_classifier_onnx -b 1 --shape IMAGE:3,224,224 --concurrency-range 1 
 ```
 :::
 
@@ -418,6 +421,12 @@ Concurrency: 1, throughput: 138.444 infer/sec, latency 6701 usec
 ::: {.cell .markdown}
 
 This model has much better inference performance than our PyTorch model with Python backend did, in a similar test. Also, if we monitor with `nvtop`, we should see higher GPU utilization while the test is running (which is a good thing!) (Take a screenshot!)
+
+:::
+
+::: {.cell .markdown}
+
+### Scaling up ONNX model
 
 Let's try scaling *this* model up. Edit the model configuration:
 
@@ -478,6 +487,8 @@ to make sure the server comes up and is ready.
 
 Then, run our benchmark with higher concurrency. (2 instances on each GPU, because we noticed that a single instance used less than half a GPU.) 
 
+(Note that in this example and the following one, we limit the number of requests sent by `perf_analyzer`; this is necessary because of measurement instability under high concurrency.)
+
 Watch the `nvtop` output as you run this test! (Take a screenshot!)
 
 
@@ -486,26 +497,27 @@ Watch the `nvtop` output as you run this test! (Take a screenshot!)
 ::: {.cell .code}
 ```bash
 # runs inside the Jupyter container on node-serve-system
-perf_analyzer -u triton_server:8000  -m food_classifier_onnx -b 1 --shape IMAGE:3,224,224 --concurrency-range 8 
+perf_analyzer -u triton_server:8000  -m food_classifier_onnx -b 1 --shape IMAGE:3,224,224 --concurrency-range 8 --warmup-request-count 500 --request-count 20000
 ```
 :::
 
 
 <!-- 
 
-    Avg request latency: 3961 usec (overhead 18 usec + queue 697 usec + compute input 97 usec + compute infer 3137 usec + compute output 11 usec)
+    Avg request latency: 3943 usec (overhead 19 usec + queue 674 usec + compute input 93 usec + compute infer 3144 usec + compute output 11 usec)
 
 Inferences/Second vs. Client Average Batch Latency
-Concurrency: 8, throughput: 1182.39 infer/sec, latency 6089 usec
+Concurrency: 8, throughput: 1110.43 infer/sec, latency 6252 usec
+
 
 -->
 
 
 ::: {.cell .markdown}
 
-This time, we should see that our model is fully utilizing the GPU (that's good!) And, our inference performance is much better than the PyTorch model with Python backend could achieve with concurrency 8.
+This time, we should see that our model is fully utilizing the GPU (that's good!) And, our system performance is much better than the PyTorch model with Python backend could achieve with concurrency 8. We still have very little queuing delay.
 
-Let's see how we do with even higher concurrency:
+Let's see how we do with even higher concurrency.
 
 :::
 
@@ -513,7 +525,7 @@ Let's see how we do with even higher concurrency:
 ::: {.cell .code}
 ```bash
 # runs inside the Jupyter container on node-serve-system
-perf_analyzer -u triton_server:8000  -m food_classifier_onnx -b 1 --shape IMAGE:3,224,224 --concurrency-range 16  
+perf_analyzer -u triton_server:8000 -m food_classifier_onnx -b 1 --shape IMAGE:3,224,224 --concurrency-range 16 --warmup-request-count 500 --request-count 20000
 ```
 :::
 
@@ -522,16 +534,17 @@ perf_analyzer -u triton_server:8000  -m food_classifier_onnx -b 1 --shape IMAGE:
 
 
 
-    Avg request latency: 9960 usec (overhead 19 usec + queue 6793 usec + compute input 100 usec + compute infer 3036 usec + compute output 11 usec)
-
+Avg request latency: 10162 usec (overhead 18 usec + queue 6872 usec + compute input 123 usec + compute infer 3136 usec + compute output 11 usec)
 Inferences/Second vs. Client Average Batch Latency
-Concurrency: 16, throughput: 1257.15 infer/sec, latency 12025 usec
+Concurrency: 16, throughput: 1175.41 infer/sec, latency 12729 usec
 
 -->
 
 ::: {.cell .markdown}
 
-We still have some queue delay, since the rate at which requests arrive is greater than the service rate of the models. But, we can feel good that we are no longer underutilizing the GPUs!
+We still have some queuing delay - the average request waits longer in the queue than its actual service time! - since the rate at which requests arrive is greater than the service rate of the models.
+
+But, we can feel good that we are no longer underutilizing the GPUs (as evidenced by `nvtop` output)!
 
 :::
 
@@ -607,8 +620,373 @@ but substitute the floating IP assigned to your instance, to access the Flask ap
 
 :::
 
+
 ::: {.cell .markdown}
 
-Then, download this entire notebook for later reference.
+### Dynamic batching with ONNX model
+
+Until now, we have been working to reduce delay when there is a high, but steady, flow of requests arriving at the service.
+
+In most realistic cases, however, the rate at which requests arrive is variable. Some time may pass with only a couple of requests, and then suddenly a burst of requests arrive. This is more challenging, because the same average request rate that is easily served with a constant interarrival pattern can have queuing delay when the arrivals are bursty.
+
+Let us explore this further in this section.
+
+:::
+
+::: {.cell .markdown}
+
+First, open the config
+
+```bash
+# runs on node-serve-system
+nano ~/serve-system-chi/models/food_classifier_onnx/config.pbtxt
+```
+
+and let's change back
+
+```
+  instance_group [
+    {
+      count: 2      
+      kind: KIND_GPU
+      gpus: [ 0, 1 ]
+    }
+]
+```
+
+to
+
+```
+  instance_group [
+    {
+      count: 1
+      kind: KIND_GPU
+      gpus: [ 0 ]
+    }
+]
+
+```
+
+so we will work with just one model instance again.
+
+Save the file (use Ctrl+O then Enter, then Ctrl+X).
+
+Re-build the container image with this change:
+
+```bash
+# runs on node-serve-system
+docker compose -f ~/serve-system-chi/docker/docker-compose-triton.yaml build triton_server
+```
+
+and then bring the server back up:
+
+```bash
+# runs on node-serve-system
+docker compose -f ~/serve-system-chi/docker/docker-compose-triton.yaml up triton_server --force-recreate -d
+```
+
+and use
+
+```bash
+# runs on node-serve-system
+docker logs triton_server
+```
+
+to make sure the server comes up and is ready. 
+
+:::
+
+
+::: {.cell .markdown}
+
+Now we will benchmark with `perf_analyzer` again. But,
+
+* instead of scaling up load with a higher `--concurrency-range`, we will scale with `--request-rate-range` (which defines the average number of requests per second), 
+* and we can vary the `--request-distribution` between `constant` interarrival time and `poisson`. 
+
+(Note: when we set a request rate, the throughput will never be higher than that rate, since throughput measures requests served per second. We will ignore these throughput measurements, since they reflect the request pattern and not the server capacity.)
+
+Let's first try sending 120 requests per second with a constant interarrival pattern. We know from our earlier tests that with one model instance, the server is still capable of processing requests at this rate:
+
+:::
+
+::: {.cell .code}
+```bash
+# runs inside the Jupyter container on node-serve-system
+perf_analyzer -u triton_server:8000 -m food_classifier_onnx -b 1 --shape IMAGE:3,224,224 --request-rate-range 120 --request-distribution constant
+```
+:::
+
+<!--
+
+    Avg request latency: 5476 usec (overhead 35 usec + queue 37 usec + compute input 139 usec + compute infer 5244 usec + compute output 20 usec)
+Inferences/Second vs. Client Average Batch Latency
+Request Rate: 120, throughput: 120.027 infer/sec, latency 6851 usec
+
+
+-->
+
+::: {.cell .markdown}
+
+Then, repeat with a Poisson arrival process:
+
+:::
+
+::: {.cell .code}
+```bash
+# runs inside the Jupyter container on node-serve-system
+perf_analyzer -u triton_server:8000 -m food_classifier_onnx -b 1 --shape IMAGE:3,224,224 --request-rate-range 120 --request-distribution poisson
+```
+:::
+
+<!--
+
+    Avg request latency: 7314 usec (overhead 30 usec + queue 2722 usec + compute input 116 usec + compute infer 4428 usec + compute output 18 usec)
+Inferences/Second vs. Client Average Batch Latency
+Request Rate: 120.00, throughput: 116.51 infer/sec, latency 9731 usec
+
+-->
+
+::: {.cell .markdown}
+
+With Poisson arrivals at the same average rate, requests sometimes arrive in bursts and sometimes with gaps. The bursts cause queue buildup, leading to much queue delay even though the average rate is the same.
+
+:::
+
+::: {.cell .markdown}
+
+This problem is not as easily addressed by provisioning more instances. Scaling out instances for bursty traffic is expensive and still leaves servers underutilized between spikes.  Instead, we will try dynamic batching.
+
+Earlier, we noted that our model can achieve higher throughput with low latency by performing inference on batches of input samples, instead of individual samples. But, our client sends requests with individual samples. 
+
+When requests arrive in a burst and are queued, however, we can batch them and then send them to the server as a batch, instead of in sequence. In other words, if the server is ready to handle the next request, and it finds four requests waiting in the queue, it should serve those four as a batch instead of just taking the next request in line. This approach absorbs short-term request bursts without constant overprovisioning.
+
+:::
+
+
+::: {.cell .markdown}
+
+Let's edit the model configuration:
+
+```bash
+# runs on node-serve-system
+nano ~/serve-system-chi/models/food_classifier_onnx/config.pbtxt
+```
+
+and at the end, add
+
+```
+dynamic_batching {
+  preferred_batch_size: [4, 6, 8]
+  max_queue_delay_microseconds: 100
+}
+
+```
+
+Save the file (use Ctrl+O then Enter, then Ctrl+X).
+
+Re-build the container image with this change:
+
+```bash
+# runs on node-serve-system
+docker compose -f ~/serve-system-chi/docker/docker-compose-triton.yaml build triton_server
+```
+
+and then bring the server back up:
+
+```bash
+# runs on node-serve-system
+docker compose -f ~/serve-system-chi/docker/docker-compose-triton.yaml up triton_server --force-recreate -d
+```
+
+and use
+
+```bash
+# runs on node-serve-system
+docker logs triton_server
+```
+
+to make sure the server comes up and is ready. 
+
+Before we benchmark this service again, let's get some pre-benchmark stats about how many requests have been served, broken down by batch size. (If you've just restarted the server, it would be zero!)
+
+:::
+
+::: {.cell .code}
+```bash
+# runs inside the Jupyter container on node-serve-system
+curl -s http://triton_server:8000/v2/models/food_classifier_onnx/versions/1/stats | python -m json.tool
+```
+:::
+
+
+::: {.cell .markdown}
+
+Then, run the benchmark again with Poisson arrivals:
+
+:::
+
+::: {.cell .code}
+```bash
+# runs inside the Jupyter container on node-serve-system
+perf_analyzer -u triton_server:8000 -m food_classifier_onnx -b 1 --shape IMAGE:3,224,224 --request-rate-range 120 --request-distribution poisson
+```
+:::
+
+
+
+<!--
+
+Avg request latency: 7225 usec (overhead 32 usec + queue 2074 usec + compute input 160 usec + compute infer 4939 usec + compute output 18 usec)
+Inferences/Second vs. Client Average Batch Latency
+Request Rate: 120.00, throughput: 116.44 infer/sec, latency 9578 usec
+
+-->
+
+::: {.cell .markdown}
+
+and get per-batch stats again:
+
+:::
+
+::: {.cell .code}
+```bash
+# runs inside the Jupyter container on node-serve-system
+curl -s http://triton_server:8000/v2/models/food_classifier_onnx/versions/1/stats | python -m json.tool
+```
+:::
+
+<!--
+
+batch_stats": [
+                {
+                    "batch_size": 1,
+                    "compute_input": {
+                        "count": 2110,
+                        "ns": 250195975
+                    },
+                    "compute_infer": {
+                        "count": 2110,
+                        "ns": 16088167166
+                    },
+                    "compute_output": {
+                        "count": 2110,
+                        "ns": 38857833
+                    }
+                },
+                {
+                    "batch_size": 2,
+                    "compute_input": {
+                        "count": 790,
+                        "ns": 208620821
+                    },
+                    "compute_infer": {
+                        "count": 790,
+                        "ns": 4119542417
+                    },
+                    "compute_output": {
+                        "count": 790,
+                        "ns": 11307106
+                    }
+                },
+                {
+                    "batch_size": 3,
+                    "compute_input": {
+                        "count": 30,
+                        "ns": 16268328
+                    },
+                    "compute_infer": {
+                        "count": 30,
+                        "ns": 1523793977
+                    },
+                    "compute_output": {
+                        "count": 30,
+                        "ns": 631592
+                    }
+                }
+            ],
+-->
+
+::: {.cell .markdown}
+
+Observe that the stats show that some requests were served in batch sizes greater than 1, even though each client sent a single request at a time.
+
+:::
+
+::: {.cell .markdown}
+
+When the average queuing delay is still low, we may not see much improvement in overall latency due to dynamic batching. Under these circumstances, even with dynamic batching on, a request that arrives while the server is busy will still have to wait (on average) for half of an inference time. But, watch what happens when we scale up the request rate:
+
+:::
+
+::: {.cell .code}
+```bash
+# runs inside the Jupyter container on node-serve-system
+perf_analyzer -u triton_server:8000 -m food_classifier_onnx -b 1 --shape IMAGE:3,224,224 --request-rate-range 180 --request-distribution poisson
+```
+:::
+
+<!--
+
+Avg request latency: 5807 usec (overhead 26 usec + queue 1820 usec + compute input 142 usec + compute infer 3803 usec + compute output 14 usec)
+Inferences/Second vs. Client Average Batch Latency
+Request Rate: 180.00, throughput: 174.95 infer/sec, latency 8237 usec
+
+-->
+
+::: {.cell .code}
+```bash
+# runs inside the Jupyter container on node-serve-system
+perf_analyzer -u triton_server:8000 -m food_classifier_onnx -b 1 --shape IMAGE:3,224,224 --request-rate-range 240 --request-distribution poisson
+```
+:::
+
+
+<!--
+
+Avg request latency: 5040 usec (overhead 22 usec + queue 1650 usec + compute input 137 usec + compute infer 3218 usec + compute output 12 usec)
+Inferences/Second vs. Client Average Batch Latency
+Request Rate: 240.00, throughput: 238.57 infer/sec, latency 7509 usec
+
+-->
+
+::: {.cell .code}
+```bash
+# runs inside the Jupyter container on node-serve-system
+perf_analyzer -u triton_server:8000 -m food_classifier_onnx -b 1 --shape IMAGE:3,224,224 --request-rate-range 300 --request-distribution poisson
+```
+:::
+
+<!--
+
+Avg request latency: 5098 usec (overhead 24 usec + queue 1764 usec + compute input 155 usec + compute infer 3142 usec + compute output 12 usec)
+Inferences/Second vs. Client Average Batch Latency
+Request Rate: 300.00, throughput: 294.63 infer/sec, latency 7302 usec
+
+-->
+
+::: {.cell .markdown}
+
+Even as we increase the request rate, the average request will still only wait half of a service time, because once the request that is currently in service finishes, every request waiting in the queue is processed as a batch.
+
+(In fact, we may even see *less* overall latency for higher request rates, because the GPU remains "warm".)
+
+
+:::
+
+
+
+::: {.cell .markdown}
+
+
+When you have finished, download this entire notebook for later reference.
+
+Then, bring down your current inference service with:
+
+```bash
+# runs on node-serve-system
+docker compose -f ~/serve-system-chi/docker/docker-compose-triton.yaml down
+```
+
 
 :::

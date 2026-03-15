@@ -2,5 +2,5 @@ fastapi
 uvicorn
 numpy
 pillow
-torch
-torchvision
+torch==2.4.0
+torchvision==0.19.0
